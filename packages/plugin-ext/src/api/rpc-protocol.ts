@@ -175,11 +175,20 @@ export class RPCProtocolImpl implements RPCProtocol {
     private receiveRequest(msg: RequestMessage): void {
         const callId = msg.id;
         const proxyId = msg.proxyId;
+        const args = msg.args;
 
-        const tokenSource = new CancellationTokenSource();
-        this.cancellationTokenSources[callId] = tokenSource;
-        msg.args.push(tokenSource.token);
-        this.invokedHandlers[callId] = this.invokeHandler(proxyId, msg.method, msg.args);
+        const disableToken = args.find(arg => arg === 'disable.cancellation.token');
+        if (!disableToken) {
+            const tokenSource = new CancellationTokenSource();
+            this.cancellationTokenSources[callId] = tokenSource;
+            args.push(tokenSource.token);
+        } else {
+            const index = args.indexOf(disableToken, 0);
+            if (index > -1) {
+                args.splice(index, 1);
+            }
+        }
+        this.invokedHandlers[callId] = this.invokeHandler(proxyId, msg.method, args);
 
         this.invokedHandlers[callId].then(r => {
             delete this.invokedHandlers[callId];
