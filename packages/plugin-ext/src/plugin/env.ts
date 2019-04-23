@@ -18,13 +18,21 @@ import * as theia from '@theia/plugin';
 import { RPCProtocol } from '../api/rpc-protocol';
 import { EnvMain, PLUGIN_RPC_CONTEXT } from '../api/plugin-api';
 import { QueryParameters } from '../common/env';
+import { v4 } from 'uuid';
 
 export class EnvExtImpl {
     private proxy: EnvMain;
     private queryParameters: QueryParameters;
+    private lang: string;
+    private envMachineId: string;
+    private envSessionId: string;
+
+    public static readonly APP_NAME = 'Eclipse Theia';
 
     constructor(rpc: RPCProtocol) {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.ENV_MAIN);
+        this.envSessionId = v4();
+        this.envMachineId = v4();
     }
 
     getEnvVariable(envVarName: string): Promise<string | undefined> {
@@ -48,7 +56,32 @@ export class EnvExtImpl {
         this.queryParameters = queryParams;
     }
 
+    setLanguage(lang: string): void {
+        this.lang = lang;
+    }
+
     getClientOperatingSystem(): Promise<theia.OperatingSystem> {
         return this.proxy.$getClientOperatingSystem();
+    }
+
+    get appName() {
+        return EnvExtImpl.APP_NAME;
+    }
+
+    get appRoot() {
+        return __dirname;
+    }
+
+    get language() {
+        return this.lang;
+    }
+    get machineId() {
+        return this.envMachineId;
+    }
+    get sessionId() {
+        return this.envSessionId;
+    }
+    get uriScheme() {
+        return 'theia';
     }
 }
